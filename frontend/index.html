@@ -6,96 +6,108 @@
   <title>TaskFlow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <div class="logo-icon">✓</div>
-    <div><span class="logo-text">Task</span><span>Flow</span></div>
+    <div class="logo-badge">✓</div>
+    <span class="logo-text">TaskFlow</span>
   </div>
-  <span id="status-badge" class="status-load">Connexion...</span>
+  <span id="status-badge" class="status-load">⚙️ Connexion...</span>
 </header>
 
 <main>
-
   <div class="hero">
-    <h1>Organisez votre travail avec style</h1>
-    <p>Un tableau Kanban simple</p>
+    <h1>Organisez vos tâches</h1>
+    <p>avec style et élégance</p>
   </div>
 
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-label"><span class="stat-dot" style="background:#94a3b8"></span>À faire</div>
-      <div class="stat-value" id="stat-todo">0</div>
+  <div class="stats-grid">
+    <div class="stat-item">
+      <div class="stat-icon">📋</div>
+      <div class="stat-info">
+        <div class="stat-label">À faire</div>
+        <div class="stat-number" id="stat-todo">0</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label"><span class="stat-dot" style="background:#3b82f6"></span>En cours</div>
-      <div class="stat-value" id="stat-inprogress">0</div>
+    <div class="stat-item">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-info">
+        <div class="stat-label">En cours</div>
+        <div class="stat-number" id="stat-inprogress">0</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label"><span class="stat-dot" style="background:#10b981"></span>Terminées</div>
-      <div class="stat-value" id="stat-done">0</div>
+    <div class="stat-item">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info">
+        <div class="stat-label">Terminées</div>
+        <div class="stat-number" id="stat-done">0</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label"><span class="stat-dot" style="background:#6366f1"></span>Total</div>
-      <div class="stat-value" id="stat-total">0</div>
+    <div class="stat-item">
+      <div class="stat-icon">📊</div>
+      <div class="stat-info">
+        <div class="stat-label">Total</div>
+        <div class="stat-number" id="stat-total">0</div>
+      </div>
     </div>
   </div>
 
-  <div class="add-card">
-    <h2>Nouvelle tâche</h2>
-    <div class="form-row">
-      <input id="input-title" type="text" placeholder="Titre de la tâche *" />
-      <input id="input-desc" type="text" placeholder="Description (optionnel)" />
-      <select id="input-prio">
+  <div class="add-task-card">
+    <h2>✨ Nouvelle tâche</h2>
+    <div class="form-group">
+      <input id="input-title" type="text" placeholder="Titre de la tâche *" class="form-input" />
+      <input id="input-desc" type="text" placeholder="Description (optionnel)" class="form-input" />
+      <select id="input-prio" class="form-select">
         <option value="low">🟢 Basse</option>
         <option value="medium" selected>🟡 Moyenne</option>
         <option value="high">🔴 Haute</option>
       </select>
-      <button class="btn-add" onclick="addTask()">+ Ajouter</button>
+      <button class="btn-primary" onclick="addTask()">+ Ajouter</button>
     </div>
   </div>
 
-  <div class="filters">
-    <button class="filter-btn active" onclick="setFilter('all', this)">Toutes</button>
+  <div class="filters-bar">
+    <button class="filter-btn active" onclick="setFilter('all', this)">Tous</button>
     <button class="filter-btn" onclick="setFilter('low', this)">🟢 Basse</button>
     <button class="filter-btn" onclick="setFilter('medium', this)">🟡 Moyenne</button>
     <button class="filter-btn" onclick="setFilter('high', this)">🔴 Haute</button>
-    <span class="count-badge" id="task-count">0 tâche(s)</span>
+    <span class="task-counter" id="task-count">0 tâche(s)</span>
   </div>
 
   <div class="board">
     <div class="column">
       <div class="column-header">
-        <span class="col-dot todo"></span>
-        <span class="column-title">À faire</span>
-        <span class="column-count" id="count-todo">0</span>
+        <span class="column-icon">📋</span>
+        <h3>À faire</h3>
+        <span class="column-badge" id="count-todo">0</span>
       </div>
-      <div id="col-todo"></div>
+      <div id="col-todo" class="tasks-container"></div>
     </div>
+
     <div class="column">
       <div class="column-header">
-        <span class="col-dot inprogress"></span>
-        <span class="column-title">En cours</span>
-        <span class="column-count" id="count-inprogress">0</span>
+        <span class="column-icon">⚡</span>
+        <h3>En cours</h3>
+        <span class="column-badge" id="count-inprogress">0</span>
       </div>
-      <div id="col-inprogress"></div>
+      <div id="col-inprogress" class="tasks-container"></div>
     </div>
+
     <div class="column">
       <div class="column-header">
-        <span class="col-dot done"></span>
-        <span class="column-title">Terminé</span>
-        <span class="column-count" id="count-done">0</span>
+        <span class="column-icon">✅</span>
+        <h3>Terminé</h3>
+        <span class="column-badge" id="count-done">0</span>
       </div>
-      <div id="col-done"></div>
+      <div id="col-done" class="tasks-container"></div>
     </div>
   </div>
 
-  <div class="version-info" id="version-info"></div>
-
+  <div class="footer-info" id="version-info"></div>
 </main>
 
 <script src="app.js"></script>

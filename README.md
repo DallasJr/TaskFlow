@@ -1,40 +1,57 @@
 # TaskFlow
 
-Application web de gestion de tâches collaborative.
-Interface Kanban avec backend Node.js et persistance Redis.
-
----
+Application web de gestion de tâches. Interface Kanban avec backend Node.js et persistance Redis.
 
 ## Stack technique
 
-- **Frontend** — HTML/CSS/JS vanilla, servi par Nginx
-- **Backend** — Node.js (sans framework), API REST
-- **Stockage** — Redis
+| Couche   | Technologie              | Rôle                                   |
+|----------|--------------------------|----------------------------------------|
+| Frontend | HTML/CSS/JS vanilla      | Interface Kanban, servie par Nginx     |
+| Backend  | Node.js (sans framework) | API REST — logique métier              |
+| Stockage | Redis 7                  | Persistance des tâches et stats        |
 
 ## Structure du projet
 
 ```
 taskflow/
 ├── frontend/
-│   ├── index.html       ← interface Kanban
-│   ├── nginx.conf       ← configuration Nginx
-│   └── Dockerfile
+│   └── index.html          ← interface Kanban
 ├── backend/
-│   ├── server.js        ← API REST
-│   ├── server.test.js   ← tests unitaires
-│   ├── package.json
-│   └── .eslintrc.json
+│   ├── server.js           ← API REST
+│   ├── server.test.js      ← tests unitaires
+│   └── package.json
+├── .env.example
+├── .gitignore
 └── README.md
 ```
 
----
-
-## Lancer le projet
+## Lancer le projet en local
 
 ### Prérequis
 
-- [Node.js 18+](https://nodejs.org)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) démarré
+- Node.js 18+
+- Docker Desktop démarré (pour lancer Redis)
+
+### Lancer Redis
+
+Redis tourne dans un container Docker — pas besoin de l'installer sur ta machine.
+
+```bash
+docker run -d -p 6379:6379 --name redis-dev redis:7-alpine
+```
+
+Pour vérifier que Redis tourne :
+
+```bash
+docker ps
+# → redis-dev doit être listé en "Up"
+```
+
+Pour arrêter Redis :
+
+```bash
+docker stop redis-dev && docker rm redis-dev
+```
 
 ### 1. Cloner le projet
 
@@ -45,74 +62,56 @@ cd taskflow
 
 ### 2. Créer le fichier de configuration
 
-Créer un fichier `.env` à la racine du projet :
-
-```
-APP_ENV=development
-APP_VERSION=1.0.0
+```bash
+cp .env.example .env
 ```
 
-### 3. Lancer la stack
+### 3. Installer les dépendances et lancer le backend
 
 ```bash
-docker compose up --build
+cd backend
+npm install
+npm start
 ```
 
-### 4. Vérifier que tout tourne
+### 4. Vérifier que l'API répond
 
 ```bash
 curl http://localhost:3001/health
 # → { "status": "ok", "redis": "connected", ... }
 ```
 
-### 5. Ouvrir l'application
-
-- **Frontend** → [http://localhost:8080](http://localhost:8080)
-- **API** → [http://localhost:3001](http://localhost:3001)
-
-### Arrêter
-
-```bash
-docker compose down
-```
-
----
-
 ## Tests et lint
 
 ```bash
 cd backend
-npm install
-npm test        # tests unitaires
+npm test        # tests unitaires — aucune connexion Redis requise
 npm run lint    # vérification ESLint
 ```
 
----
+## API
 
-## API Backend
+| Méthode | Route        | Body                                           | Description             |
+|---------|--------------|------------------------------------------------|-------------------------|
+| GET     | /health      | —                                              | État de l'app           |
+| GET     | /tasks       | —                                              | Liste toutes les tâches |
+| POST    | /tasks       | `{ title, description?, priority? }`           | Créer une tâche         |
+| PUT     | /tasks/:id   | `{ title?, description?, status?, priority? }` | Modifier une tâche      |
+| DELETE  | /tasks/:id   | —                                              | Supprimer une tâche     |
 
-| Méthode | Route | Body | Description |
-|---|---|---|---|
-| GET | `/health` | — | État de l'app et stats Redis |
-| GET | `/tasks` | — | Liste toutes les tâches |
-| POST | `/tasks` | `{ title, description?, priority? }` | Créer une tâche |
-| PUT | `/tasks/:id` | `{ title?, description?, status?, priority? }` | Modifier une tâche |
-| DELETE | `/tasks/:id` | — | Supprimer une tâche |
-
-**Valeurs `status` :** `todo` · `in-progress` · `done`
-**Valeurs `priority` :** `low` · `medium` · `high`
-
----
+Valeurs `status` : `todo` · `in-progress` · `done`  
+Valeurs `priority` : `low` · `medium` · `high`
 
 ## Variables d'environnement
 
-| Variable | Défaut | Description |
-|---|---|---|
-| `PORT` | `3001` | Port du backend |
-| `APP_ENV` | `development` | Environnement |
-| `APP_VERSION` | `1.0.0` | Version affichée dans `/health` |
-| `REDIS_URL` | `redis://localhost:6379` | URL de connexion Redis |
+| Variable      | Défaut                   | Description                   |
+|---------------|--------------------------|-------------------------------|
+| `PORT`        | `3001`                   | Port du backend               |
+| `APP_ENV`     | `development`            | Environnement                 |
+| `APP_VERSION` | `1.0.0`                  | Version affichée dans /health |
+| `REDIS_URL`   | `redis://localhost:6379` | URL de connexion Redis        |
 
 ---
 
-*Ce projet est la base du projet final DevOps — Bachelor 3 Développement.*
+Ce projet est la base du projet final DevOps — Bachelor 3 Développement.  
+Votre mission : le containeriser, automatiser sa livraison, et le déployer sur Kubernetes.
