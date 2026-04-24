@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node server.test.js",
+    "test": "node --exit server.test.js",
     "lint": "npx eslint server.js server.test.js"
   },
   "eslintConfig": {
