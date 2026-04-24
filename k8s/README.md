@@ -80,39 +80,78 @@ kubectl logs <nom-du-pod> -n taskflow-staging
 kubectl describe pod <nom-du-pod> -n taskflow-staging
 ```
 
-## Démonstrations à l'oral
+## Démo live — Script complet
 
-### Self-healing — Kubernetes recrée automatiquement un pod supprimé
+### 0. Vérifier que tout tourne avant de commencer
 ```bash
-kubectl delete pod <nom-du-pod> -n taskflow-production
-kubectl get pods -n taskflow-production -w
-# → le pod repart automatiquement
+kubectl get pods -n taskflow-staging
+kubectl get pods -n taskflow-production
+# → tous les pods doivent être en STATUS "Running"
 ```
 
-### Rolling update sans interruption
+---
+
+### 1. Montrer les deux namespaces et les pods
 ```bash
+kubectl get namespaces | grep taskflow
+kubectl get pods -n taskflow-staging
+kubectl get pods -n taskflow-production
+```
+
+---
+
+### 2. Montrer les services et l'accès à l'app
+```bash
+kubectl get svc -n taskflow-staging
+kubectl port-forward svc/frontend-service 8080:80 -n taskflow-staging
+# → ouvrir http://localhost:8080 dans le navigateur
+# Ctrl+C pour arrêter le port-forward
+```
+
+---
+
+### 3. Self-healing — tuer un pod en live
+
+```bash
+# Récupérer le nom exact du pod backend
+kubectl get pods -n taskflow-production
+
+# Supprimer le pod (remplacer <nom-du-pod> par le vrai nom)
+kubectl delete pod <nom-du-pod> -n taskflow-production
+
+# Surveiller la recréation automatique
+kubectl get pods -n taskflow-production -w
+# → le pod repasse à Running en quelques secondes tout seul
+# Ctrl+C pour arrêter le watch
+```
+
+---
+
+### 4. Rolling update sans interruption
+
+```bash
+# Changer la version de l'image du backend
 kubectl set image deployment/taskflow-backend \
   backend=ghcr.io/taskflow/backend:1.1.0 \
   -n taskflow-production
 
+# Surveiller le déploiement progressif
 kubectl rollout status deployment/taskflow-backend -n taskflow-production
+# → "Waiting for rollout to finish: 1 out of 3 new replicas have been updated..."
+# → "deployment successfully rolled out"
 ```
 
-### Rollback en une commande
+---
+
+### 5. Rollback en une commande
+
 ```bash
 kubectl rollout undo deployment/taskflow-backend -n taskflow-production
+
+# Vérifier que l'ancienne version est revenue
+kubectl rollout status deployment/taskflow-backend -n taskflow-production
+kubectl describe deployment taskflow-backend -n taskflow-production | Select-String "Image"
 ```
-
-## Différences staging vs production
-
-| | Staging | Production |
-|---|---|---|
-| Replicas backend/frontend | 1 | 3 |
-| Image tag | `latest` (merge main) | `1.0.0` (tag git) |
-| Redis storage | emptyDir (éphémère) | PersistentVolumeClaim 1Gi |
-| Autoscaling (HPA) | non | 2 à 6 replicas si CPU > 50% |
-| PodDisruptionBudget | non | min 1 pod toujours disponible |
-| Déclenchement CI/CD | merge sur `main` | push d'un tag git |
 
 ## Supprimer les environnements
 
