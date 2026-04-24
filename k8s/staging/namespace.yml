@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: taskflow-staging
+  labels:
+    env: staging
+    app: taskflow
