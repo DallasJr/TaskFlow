@@ -136,5 +136,10 @@ test("Une date ISO a le bon format", () => {
 
 // ── Résultat ──────────────────────────────────────────────────────────
 console.log(`\n📊 ${passed} passés, ${failed} échoués\n`);
-if (failed > 0) { console.log("❌ Des tests ont échoué."); process.exit(1); }
-else { console.log("✅ Tous les tests passent.\n"); }
+if (failed > 0) {
+  console.log("❌ Des tests ont échoué.");
+  process.exit(1);
+} else {
+  console.log("✅ Tous les tests passent.\n");
+  process.exit(0);
+}
