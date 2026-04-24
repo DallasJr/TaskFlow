@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
@@ -6,97 +6,105 @@
   <title>TaskFlow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <div class="logo-badge">✓</div>
+    <div class="logo-badge">TF</div>
     <span class="logo-text">TaskFlow</span>
   </div>
-  <span id="status-badge" class="status-load">⚙️ Connexion...</span>
+  <div class="header-right">
+    <span id="current-user" class="current-user"></span>
+    <span id="status-badge" class="status-load">Connexion...</span>
+    <button class="btn-logout" id="btn-logout" onclick="logout()" style="display:none">Deconnexion</button>
+  </div>
 </header>
 
-<main>
-  <div class="hero">
-    <h1>Organisez vos tâches</h1>
-    <p>avec style et élégance</p>
+<!-- Auth Section -->
+<div id="auth-section" class="auth-section">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-badge">TF</div>
+      <span class="logo-text">TaskFlow</span>
+    </div>
+    <p class="auth-subtitle">Gestionnaire de taches</p>
+    <div class="form-group">
+      <input id="auth-username" type="text" placeholder="Nom d utilisateur" class="form-input" autocomplete="username" />
+      <input id="auth-password" type="password" placeholder="Mot de passe" class="form-input" autocomplete="current-password" />
+      <p id="auth-error" class="auth-error"></p>
+      <button class="btn-primary" onclick="login()">Se connecter</button>
+      <button class="btn-secondary" onclick="register()">Creer un compte</button>
+    </div>
   </div>
+</div>
 
-  <div class="stats-grid">
+<!-- Board Section -->
+<div id="board-section" style="display:none">
+<main>
+
+  <div class="stats-bar">
     <div class="stat-item">
-      <div class="stat-icon">📋</div>
-      <div class="stat-info">
-        <div class="stat-label">À faire</div>
-        <div class="stat-number" id="stat-todo">0</div>
-      </div>
+      <span class="stat-label">A faire</span>
+      <span class="stat-number" id="stat-todo">0</span>
     </div>
+    <div class="stat-sep"></div>
     <div class="stat-item">
-      <div class="stat-icon">⚡</div>
-      <div class="stat-info">
-        <div class="stat-label">En cours</div>
-        <div class="stat-number" id="stat-inprogress">0</div>
-      </div>
+      <span class="stat-label">En cours</span>
+      <span class="stat-number" id="stat-inprogress">0</span>
     </div>
+    <div class="stat-sep"></div>
     <div class="stat-item">
-      <div class="stat-icon">✅</div>
-      <div class="stat-info">
-        <div class="stat-label">Terminées</div>
-        <div class="stat-number" id="stat-done">0</div>
-      </div>
+      <span class="stat-label">Terminees</span>
+      <span class="stat-number" id="stat-done">0</span>
     </div>
+    <div class="stat-sep"></div>
     <div class="stat-item">
-      <div class="stat-icon">📊</div>
-      <div class="stat-info">
-        <div class="stat-label">Total</div>
-        <div class="stat-number" id="stat-total">0</div>
-      </div>
+      <span class="stat-label">Total</span>
+      <span class="stat-number" id="stat-total">0</span>
     </div>
+    <div class="stat-sep"></div>
     <div class="stat-item">
-      <div class="stat-info">
-        <div class="stat-label">Complétion</div>
-        <div class="stat-number" id="stat-completion">0%</div>
-      </div>
+      <span class="stat-label">Completion</span>
+      <span class="stat-number" id="stat-completion">0%</span>
     </div>
   </div>
 
   <div class="add-task-card">
-    <h2>✨ Nouvelle tâche</h2>
-    <div class="form-group">
-      <input id="input-title" type="text" placeholder="Titre de la tâche *" class="form-input" />
+    <h2>Nouvelle tache</h2>
+    <div class="form-row">
+      <input id="input-title" type="text" placeholder="Titre *" class="form-input" />
       <input id="input-desc" type="text" placeholder="Description (optionnel)" class="form-input" />
       <select id="input-prio" class="form-select">
-        <option value="low">🟢 Basse</option>
-        <option value="medium" selected>🟡 Moyenne</option>
-        <option value="high">🔴 Haute</option>
+        <option value="low">Basse priorite</option>
+        <option value="medium" selected>Priorite moyenne</option>
+        <option value="high">Haute priorite</option>
       </select>
-      <button class="btn-primary" onclick="addTask()">+ Ajouter</button>
+      <button class="btn-primary" onclick="addTask()">Ajouter</button>
     </div>
   </div>
 
   <div class="filters-bar">
-    <button class="filter-btn active" onclick="setFilter('all', this)">Tous</button>
-    <button class="filter-btn" onclick="setFilter('low', this)">🟢 Basse</button>
-    <button class="filter-btn" onclick="setFilter('medium', this)">🟡 Moyenne</button>
-    <button class="filter-btn" onclick="setFilter('high', this)">🔴 Haute</button>
-    <span class="task-counter" id="task-count">0 tâche(s)</span>
+    <button class="filter-btn active" onclick="setFilter('all', this)">Toutes</button>
+    <button class="filter-btn" onclick="setFilter('low', this)">Basse</button>
+    <button class="filter-btn" onclick="setFilter('medium', this)">Moyenne</button>
+    <button class="filter-btn" onclick="setFilter('high', this)">Haute</button>
+    <span class="task-counter" id="task-count">0 tache(s)</span>
   </div>
 
   <div class="board">
     <div class="column">
-      <div class="column-header">
-        <span class="column-icon">📋</span>
-        <h3>À faire</h3>
+      <div class="column-header col-todo">
+        <h3>A faire</h3>
         <span class="column-badge" id="count-todo">0</span>
       </div>
       <div id="col-todo" class="tasks-container"></div>
     </div>
 
     <div class="column">
-      <div class="column-header">
-        <span class="column-icon">⚡</span>
+      <div class="column-header col-inprogress">
         <h3>En cours</h3>
         <span class="column-badge" id="count-inprogress">0</span>
       </div>
@@ -104,9 +112,8 @@
     </div>
 
     <div class="column">
-      <div class="column-header">
-        <span class="column-icon">✅</span>
-        <h3>Terminé</h3>
+      <div class="column-header col-done">
+        <h3>Termine</h3>
         <span class="column-badge" id="count-done">0</span>
       </div>
       <div id="col-done" class="tasks-container"></div>
@@ -114,9 +121,10 @@
   </div>
 
   <div class="footer-info" id="version-info"></div>
+
 </main>
+</div>
 
 <script src="app.js"></script>
-
 </body>
 </html>

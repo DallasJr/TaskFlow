@@ -1,6 +1,8 @@
 const http   = require("http");
 const redis  = require("redis");
 const crypto = require("crypto");
+const jwt    = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 try { require("dotenv").config(); } catch { /* dotenv optionnel */ }
 
@@ -8,6 +10,7 @@ const PORT        = process.env.PORT        || 3001;
 const APP_ENV     = process.env.APP_ENV     || "development";
 const APP_VERSION = process.env.APP_VERSION || "1.0.0";
 const REDIS_URL   = process.env.REDIS_URL   || "redis://127.0.0.1:6379";
+const JWT_SECRET  = process.env.JWT_SECRET  || "taskflow-dev-secret-change-in-prod";
 
 const client = redis.createClient({ url: REDIS_URL });
 client.on("error", (err) => console.error("Redis error:", err.message));
@@ -34,7 +37,7 @@ function json(res, status, data) {
     "Content-Type":                "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods":"GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers":"Content-Type",
+    "Access-Control-Allow-Headers":"Content-Type, Authorization",
     "X-App-Version":               APP_VERSION,
     "X-App-Env":                   APP_ENV,
   });
@@ -43,6 +46,35 @@ function json(res, status, data) {
 
 const VALID_STATUSES   = ["todo", "in-progress", "done"];
 const VALID_PRIORITIES = ["low", "medium", "high"];
+
+// ── Auth utilisateurs ───────────────────────────────────────────────
+
+function verifyToken(req) {
+  const auth = req.headers["authorization"] || "";
+  if (!auth.startsWith("Bearer ")) return null;
+  try { return jwt.verify(auth.slice(7), JWT_SECRET); }
+  catch { return null; }
+}
+
+async function registerUser(username, password) {
+  if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+    throw new Error("Username invalide (3-30 caractères alphanumériques)");
+  }
+  const exists = await client.exists(`user:${username}`);
+  if (exists) throw new Error("Nom d'utilisateur déjà pris");
+  const hash = await bcrypt.hash(password, 10);
+  await client.hSet(`user:${username}`, { username, password: hash });
+  return { username };
+}
+
+async function loginUser(username, password) {
+  const user = await client.hGetAll(`user:${username}`);
+  if (!user.username) throw new Error("Identifiants incorrects");
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) throw new Error("Identifiants incorrects");
+  const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "24h" });
+  return { token, username };
+}
 
 // ── Logique tâches ───────────────────────────────────────────────────
 
@@ -121,13 +153,36 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       "Access-Control-Allow-Origin":  "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
     });
     res.end();
     return;
   }
 
   const url = req.url.split("?")[0];
+
+  // POST /auth/register
+  if (req.method === "POST" && url === "/auth/register") {
+    try {
+      const { username, password } = await parseBody(req);
+      if (!username?.trim() || !password) throw new Error("Username et password requis");
+      if (password.length < 6) throw new Error("Mot de passe trop court (6 caractères minimum)");
+      const user = await registerUser(username.trim(), password);
+      json(res, 201, { message: "Compte créé", username: user.username });
+    } catch (e) { json(res, 400, { error: e.message }); }
+    return;
+  }
+
+  // POST /auth/login
+  if (req.method === "POST" && url === "/auth/login") {
+    try {
+      const { username, password } = await parseBody(req);
+      if (!username?.trim() || !password) throw new Error("Username et password requis");
+      const result = await loginUser(username.trim(), password);
+      json(res, 200, result);
+    } catch (e) { json(res, 401, { error: e.message }); }
+    return;
+  }
 
   // GET /health
   if (req.method === "GET" && url === "/health") {
@@ -160,6 +215,7 @@ const server = http.createServer(async (req, res) => {
 
   // GET /tasks
   if (req.method === "GET" && url === "/tasks") {
+    if (!verifyToken(req)) { json(res, 401, { error: "Token manquant ou invalide" }); return; }
     const tasks = await getTasks();
     json(res, 200, { total: tasks.length, tasks });
     return;
@@ -167,6 +223,7 @@ const server = http.createServer(async (req, res) => {
 
   // POST /tasks
   if (req.method === "POST" && url === "/tasks") {
+    if (!verifyToken(req)) { json(res, 401, { error: "Token manquant ou invalide" }); return; }
     try {
       const body = await parseBody(req);
       const task = await createTask(body);
@@ -178,6 +235,7 @@ const server = http.createServer(async (req, res) => {
   // PUT /tasks/:id
   const matchPut = url.match(/^\/tasks\/([a-f0-9]{12})$/);
   if (req.method === "PUT" && matchPut) {
+    if (!verifyToken(req)) { json(res, 401, { error: "Token manquant ou invalide" }); return; }
     try {
       const body = await parseBody(req);
       const task = await updateTask(matchPut[1], body);
@@ -190,6 +248,7 @@ const server = http.createServer(async (req, res) => {
   // DELETE /tasks/:id
   const matchDel = url.match(/^\/tasks\/([a-f0-9]{12})$/);
   if (req.method === "DELETE" && matchDel) {
+    if (!verifyToken(req)) { json(res, 401, { error: "Token manquant ou invalide" }); return; }
     const deleted = await deleteTask(matchDel[1]);
     if (!deleted) { json(res, 404, { error: "Tâche introuvable" }); return; }
     json(res, 200, { message: "Tâche supprimée" });
