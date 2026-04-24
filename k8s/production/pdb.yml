@@ -1,0 +1,23 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: taskflow-backend-pdb
+  namespace: taskflow-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: taskflow
+      tier: backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: taskflow-frontend-pdb
+  namespace: taskflow-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: taskflow
+      tier: frontend
