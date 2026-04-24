@@ -124,6 +124,7 @@ async function addTask() {
     descInput.value = "";
     fetchTasks();
     fetchHealth();
+    fetchStats();
   } catch (error) {
     console.error("Erreur lors de l'ajout de la tâche:", error);
   }
@@ -138,6 +139,7 @@ async function changeStatus(taskId, newStatus) {
     });
     fetchTasks();
     fetchHealth();
+    fetchStats();
   } catch (error) {
     console.error("Erreur lors de la mise à jour du statut:", error);
   }
@@ -148,9 +150,21 @@ async function deleteTask(taskId) {
     try {
       await fetch(`${API}/tasks/${taskId}`, { method: "DELETE" });
       fetchTasks();
+      fetchStats();
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
     }
+  }
+}
+
+// ============= STATS =============
+async function fetchStats() {
+  try {
+    const response = await fetch(`${API}/stats`);
+    const data = await response.json();
+    document.getElementById("stat-completion").textContent = `${data.completionRate}%`;
+  } catch {
+    document.getElementById("stat-completion").textContent = "—";
   }
 }
 
@@ -176,4 +190,6 @@ document.getElementById("input-title").addEventListener("keypress", (event) => {
 // ============= INITIALIZATION =============
 fetchHealth();
 fetchTasks();
+fetchStats();
 setInterval(fetchHealth, 30000);
+setInterval(fetchStats, 30000);

@@ -83,6 +83,12 @@ curl http://localhost:3001/health
 # → { "status": "ok", "redis": "connected", ... }
 ```
 
+### Vérifier que la page stats répond
+
+```bash
+curl http://localhost:3001/stats
+```
+
 ## Tests et lint
 
 ```bash
@@ -97,6 +103,7 @@ npm run lint    # vérification ESLint
 |---------|--------------|------------------------------------------------|-------------------------|
 | GET     | /health      | —                                              | État de l'app           |
 | GET     | /tasks       | —                                              | Liste toutes les tâches |
+| GET     | /stats       | —                                              | Liste toutes les stats|
 | POST    | /tasks       | `{ title, description?, priority? }`           | Créer une tâche         |
 | PUT     | /tasks/:id   | `{ title?, description?, status?, priority? }` | Modifier une tâche      |
 | DELETE  | /tasks/:id   | —                                              | Supprimer une tâche     |
