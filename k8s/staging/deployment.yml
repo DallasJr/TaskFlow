@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/taskflow/backend:latest
+          image: taskflow-backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
@@ -86,7 +86,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/taskflow/frontend:latest
+          image: taskflow-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
