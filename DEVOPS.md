@@ -1,5 +1,34 @@
 # DEVOPS.md — Choix d'architecture Kubernetes
 
+## Choix 1 — Image de base du backend
+ 
+Deux images testées :
+ 
+| Image | Taille (docker images) | CVE CRITICAL | CVE HIGH |
+|---|---|---|---|
+| `node:18-alpine` | ~210MB | 2 | 5 |
+| `node:20-alpine` | 199MB | 0 | 0 |
+ 
+**Image retenue : `node:20-alpine`**
+ 
+node:20-alpine est plus légère et ne présente aucune CVE, confirmé par le scan Trivy sur l'image finale `jayards/taskflow-backend:v1.0.1` (0 vulnérabilité sur alpine 3.23.4 et sur l'ensemble des dépendances npm). La version 20 est la LTS active — node:18 entre en fin de maintenance. L'image alpine réduit drastiquement la surface d'attaque par rapport à une image Debian complète (node:18 complète dépasse 1GB). L'image finale fait 199MB, sous la limite des 200MB fixée.
+ 
+---
+ 
+## Choix 2 — Politique de redémarrage dans Compose
+ 
+**Politique retenue : `unless-stopped`** sur les 3 services (frontend, backend, cache).
+ 
+| Option | Comportement si crash à 3h du matin | Verdict |
+|---|---|---|
+| `unless-stopped` | Redémarre automatiquement ✅ | Retenu |
+| `on-failure` | Redémarre uniquement si exit code != 0 — ne couvre pas tous les crashes | Trop restrictif |
+| `always` | Redémarre même après un `docker stop` manuel — impossible d'arrêter proprement | Trop agressif |
+ 
+`unless-stopped` est le bon équilibre : l'app se relève seule en cas de crash sans bloquer les opérations de maintenance volontaires.
+
+---
+
 ## Choix 3 — Stratégie de déploiement Kubernetes
 
 ### Choix retenu
@@ -72,13 +101,24 @@ Le Service Kubernetes répartit automatiquement le trafic entre les 3 replicas e
 
 ---
 
-### Résumé global des deux choix combinés
-
-| Paramètre | Staging | Production |
+## Trivy — Résultats et gestion
+ 
+Scan effectué sur `jayards/taskflow-backend:v1.0.1` (alpine 3.23.4) via le pipeline CI/CD.
+ 
+| Cible | Type | CVE détectées |
 |---|---|---|
-| `replicas` | 1 | 3 |
-| `maxUnavailable` | 0 | 1 |
-| `maxSurge` | 1 | 1 |
-| Downtime possible | Non | Non |
-| PodDisruptionBudget | Non | Oui (minAvailable: 1) |
-| HPA | Non | Oui (2 à 6 replicas, CPU > 50%) |
+| alpine 3.23.4 (OS) | alpine | 0 |
+| Dépendances npm (app/) | node-pkg | 0 |
+| Dépendances npm (npm interne) | node-pkg | 0 |
+ 
+**Résultat : 0 vulnérabilité détectée** sur l'ensemble de l'image — OS et dépendances applicatives inclus.
+ 
+Le choix de `node:20-alpine` combiné à `npm ci --only=production` (dépendances de prod uniquement dans l'image finale) explique ce résultat propre. Le rapport complet est disponible en artefact dans GitHub Actions.
+ 
+---
+
+## Difficulté rencontrée
+ 
+**Problème :** Les tests échouaient en CI avec l'erreur `Redis error: connect ECONNREFUSED 127.0.0.1:6379`. En local tout fonctionnait car Redis tournait via Docker Compose, mais dans GitHub Actions aucun Redis n'était disponible.
+ 
+**Solution :** Ajout d'un bloc `services` dans le job `test` du pipeline pour démarrer un container `redis:7-alpine` directement dans le runner GitHub Actions, avec un healthcheck `redis-cli ping` pour s'assurer que Redis est prêt avant l'exécution des tests.
